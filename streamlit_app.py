@@ -1,8 +1,26 @@
 import streamlit as st
 
-st.set_page_config(page_title="EMDR Bilateral Stimulation Tool", layout="wide")
+st.set_page_config(page_title="EMDR SYNC", layout="wide")
 
-st.title("EMDR SYNC")
+st.markdown(
+    """
+    <style>
+    .title-box {
+        background-color: #a3d5ff; /* pastel blue */
+        border-radius: 20px;
+        padding: 20px;
+        text-align: center;
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #1a1a1a;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    </style>
+    <div class="title-box">EMDR SYNC</div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.sidebar.header("Settings")
 
@@ -27,7 +45,7 @@ ball_color = st.sidebar.color_picker(
 
 container_color = st.sidebar.color_picker(
     "Container Background",
-    "#1f1f1f"
+    "#f0f4f8"
 )
 
 pattern = st.sidebar.selectbox(
@@ -65,7 +83,7 @@ height:65vh;
 width:90%;
 background:{container_color};
 border-radius:25px;
-box-shadow:0 10px 30px rgba(0,0,0,0.35);
+box-shadow:0 10px 30px rgba(0,0,0,0.25);
 overflow:hidden;
 }}
 
@@ -174,4 +192,4 @@ animate()
 </script>
 """
 
-st.components.v1.html(html, height=600)
+st.components.v1.html(html, height=650)
