@@ -9,9 +9,8 @@ st.sidebar.header("Settings")
 speed = st.sidebar.slider(
     "Speed",
     min_value=1,
-    max_value=20,
-    value=8,
-    help="Higher = faster movement"
+    max_value=25,
+    value=10
 )
 
 size = st.sidebar.slider(
@@ -21,9 +20,14 @@ size = st.sidebar.slider(
     value=50
 )
 
-color = st.sidebar.color_picker(
+ball_color = st.sidebar.color_picker(
     "Ball Color",
     "#ff4b4b"
+)
+
+container_color = st.sidebar.color_picker(
+    "Container Background",
+    "#1f1f1f"
 )
 
 pattern = st.sidebar.selectbox(
@@ -48,11 +52,20 @@ pattern_js = {
 html = f"""
 <style>
 
+.wrapper {{
+display:flex;
+justify-content:center;
+align-items:center;
+padding-top:20px;
+}}
+
 .container {{
 position:relative;
-height:70vh;
-width:100%;
-background-color:black;
+height:65vh;
+width:90%;
+background:{container_color};
+border-radius:25px;
+box-shadow:0 10px 30px rgba(0,0,0,0.35);
 overflow:hidden;
 }}
 
@@ -61,22 +74,24 @@ position:absolute;
 width:{size}px;
 height:{size}px;
 border-radius:50%;
-background:{color};
+background:{ball_color};
 }}
 
 </style>
 
-<div class="container">
+<div class="wrapper">
+<div class="container" id="container">
 <div class="ball" id="ball"></div>
+</div>
 </div>
 
 <script>
 
 const ball = document.getElementById("ball")
-const container = document.querySelector(".container")
+const container = document.getElementById("container")
 
-let x = 0
-let y = 0
+let x = 100
+let y = 100
 let dx = {speed}
 let dy = {speed}
 let angle = 0
