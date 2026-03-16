@@ -1,83 +1,162 @@
 import streamlit as st
-import time
 
-st.set_page_config(page_title="EMDR Tool", layout="wide")
+st.set_page_config(page_title="EMDR Bilateral Stimulation Tool", layout="wide")
 
 st.title("🧠 EMDR Bilateral Stimulation Tool")
 
-# Sidebar controls
 st.sidebar.header("Settings")
 
 speed = st.sidebar.slider(
-    "Ball Speed",
-    min_value=0.01,
-    max_value=0.2,
-    value=0.05,
-    step=0.01,
-    help="Lower = faster movement"
+    "Speed",
+    min_value=1,
+    max_value=20,
+    value=8,
+    help="Higher = faster movement"
 )
 
-color = st.sidebar.color_picker("Ball Color", "#ff4b4b")
-
-direction = st.sidebar.selectbox(
-    "Start Direction",
-    ["Left → Right", "Right → Left"]
+size = st.sidebar.slider(
+    "Ball Size",
+    min_value=20,
+    max_value=120,
+    value=50
 )
 
-if direction == "Left → Right":
-    direction_value = 1
-else:
-    direction_value = -1
+color = st.sidebar.color_picker(
+    "Ball Color",
+    "#ff4b4b"
+)
 
-# Controls
-start = st.sidebar.button("Start")
-stop = st.sidebar.button("Stop")
+pattern = st.sidebar.selectbox(
+    "Movement Pattern",
+    [
+        "Left ↔ Right",
+        "Up ↕ Down",
+        "Circle",
+        "Square",
+        "Diagonal"
+    ]
+)
 
-# Center container
-container = st.empty()
+pattern_js = {
+    "Left ↔ Right": "horizontal",
+    "Up ↕ Down": "vertical",
+    "Circle": "circle",
+    "Square": "square",
+    "Diagonal": "diagonal"
+}[pattern]
 
-# HTML animation template
-def render_ball(position, color):
-    html = f"""
-    <div style="position:relative;height:200px;">
-        <div style="
-            position:absolute;
-            left:{position}%;
-            top:50%;
-            transform:translate(-50%, -50%);
-            width:50px;
-            height:50px;
-            border-radius:50%;
-            background:{color};
-            ">
-        </div>
-    </div>
-    """
-    container.markdown(html, unsafe_allow_html=True)
+html = f"""
+<style>
 
+.container {{
+position:relative;
+height:70vh;
+width:100%;
+background-color:black;
+overflow:hidden;
+}}
 
-# Animation loop
-if start:
+.ball {{
+position:absolute;
+width:{size}px;
+height:{size}px;
+border-radius:50%;
+background:{color};
+}}
 
-    pos = 0 if direction_value == 1 else 100
-    direction = direction_value
+</style>
 
-    while True:
+<div class="container">
+<div class="ball" id="ball"></div>
+</div>
 
-        render_ball(pos, color)
+<script>
 
-        pos += direction * 2
+const ball = document.getElementById("ball")
+const container = document.querySelector(".container")
 
-        if pos >= 100:
-            direction = -1
+let x = 0
+let y = 0
+let dx = {speed}
+let dy = {speed}
+let angle = 0
 
-        if pos <= 0:
-            direction = 1
+function animate() {{
 
-        time.sleep(speed)
+const w = container.clientWidth
+const h = container.clientHeight
+const size = {size}
 
-        if stop:
-            break
+let mode = "{pattern_js}"
 
-else:
-    render_ball(50, color)
+if(mode === "horizontal") {{
+    x += dx
+    if(x > w-size || x < 0) dx *= -1
+}}
+
+else if(mode === "vertical") {{
+    y += dy
+    if(y > h-size || y < 0) dy *= -1
+}}
+
+else if(mode === "diagonal") {{
+    x += dx
+    y += dy
+
+    if(x > w-size || x < 0) dx *= -1
+    if(y > h-size || y < 0) dy *= -1
+}}
+
+else if(mode === "circle") {{
+
+    angle += 0.03 * {speed}
+
+    let cx = w/2
+    let cy = h/2
+    let r = Math.min(w,h)/3
+
+    x = cx + r * Math.cos(angle)
+    y = cy + r * Math.sin(angle)
+
+}}
+
+else if(mode === "square") {{
+
+    x += dx
+
+    if(x >= w-size) {{
+        x = w-size
+        dx = 0
+        dy = {speed}
+    }}
+
+    if(y >= h-size) {{
+        y = h-size
+        dy = 0
+        dx = -{speed}
+    }}
+
+    if(x <= 0 && dx < 0) {{
+        dx = 0
+        dy = -{speed}
+    }}
+
+    if(y <= 0 && dy < 0) {{
+        dy = 0
+        dx = {speed}
+    }}
+}}
+
+ball.style.left = x + "px"
+ball.style.top = y + "px"
+
+requestAnimationFrame(animate)
+
+}}
+
+animate()
+
+</script>
+"""
+
+st.components.v1.html(html, height=600)
