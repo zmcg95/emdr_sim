@@ -56,7 +56,7 @@ if st.session_state.page == "home":
 
         <div class="home-title">EMDR TOOLS</div>
         <div class="card-container">
-            <div class="card" onclick="window.streamlitGoTo('sync')">EMDR SYNC</div>
+            <div class="card" onclick="window.parent.postMessage({{type:'navigate', page:'sync'}}, '*')">EMDR SYNC</div>
             <div class="card">Coming Soon</div>
             <div class="card">Coming Soon</div>
         </div>
@@ -64,25 +64,17 @@ if st.session_state.page == "home":
         unsafe_allow_html=True
     )
 
-    # JS handler to communicate clicks back to Streamlit
+    # JS listener for navigation
     st.components.v1.html("""
     <script>
-    const cards = document.querySelectorAll('.card');
-    cards.forEach(c=>{
-        c.addEventListener('click', ()=>{
-            if(c.innerText.includes('EMDR SYNC')){
-                window.parent.postMessage({type:'streamlit-message', page:'sync'}, '*');
-            }
-        });
-    })
+    window.addEventListener('message', (event) => {
+        const msg = event.data;
+        if(msg.type==='navigate'){
+            window.parent.location.reload();
+        }
+    });
     </script>
     """, height=0)
-
-    # Listen for messages
-    from streamlit_javascript import st_javascript
-    msg = st_javascript("return window.msg", key="msg")
-    if msg and msg.get("page") == "sync":
-        st.session_state.page = "sync"
 
 # ---- EMDR SYNC PAGE ----
 elif st.session_state.page == "sync":
@@ -153,28 +145,46 @@ elif st.session_state.page == "sync":
     background:{ball_color};
     }}
     </style>
+
     <div class="wrapper">
     <div class="container" id="container">
     <div class="ball" id="ball"></div>
     </div>
     </div>
+
     <script>
-    const ball = document.getElementById("ball")
-    const container = document.getElementById("container")
-    let x=100,y=100,dx={speed},dy={speed},angle=0
-    function animate(){{
-        const w=container.clientWidth,h=container.clientHeight
-        let mode="{pattern_js}"
-        if(mode==="horizontal"){{x+=dx;if(x>w-50||x<0)dx*=-1}}
-        else if(mode==="vertical"){{y+=dy;if(y>h-50||y<0)dy*=-1}}
-        else if(mode==="diagonal"){{x+=dx;y+=dy;if(x>w-50||x<0)dx*=-1;if(y>h-50||y<0)dy*=-1}}
-        else if(mode==="circle"){{angle+=0.03*{speed};let cx=w/2,cy=h/2,r=Math.min(w,h)/3;x=cx+r*Math.cos(angle);y=cy+r*Math.sin(angle);}}
-        else if(mode==="square"){{x+=dx;if(x>=w-50){x=w-50;dx=0;dy={speed};}if(y>=h-50){y=h-50;dy=0;dx=-{speed};}if(x<=0&&dx<0){dx=0;dy=-{speed};}if(y<=0&&dy<0){dy=0;dx={speed};}} 
-        ball.style.left=x+"px"
-        ball.style.top=y+"px"
-        requestAnimationFrame(animate)
+    const ball = document.getElementById("ball");
+    const container = document.getElementById("container");
+    let x = 100, y = 100, dx = {speed}, dy = {speed}, angle = 0;
+
+    function animate() {{
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        let mode = "{pattern_js}";
+
+        if(mode==="horizontal") {{ x += dx; if(x > w-{size} || x < 0) dx *= -1; }}
+        else if(mode==="vertical") {{ y += dy; if(y > h-{size} || y < 0) dy *= -1; }}
+        else if(mode==="diagonal") {{ x += dx; y += dy; if(x > w-{size} || x < 0) dx *= -1; if(y > h-{size} || y < 0) dy *= -1; }}
+        else if(mode==="circle") {{
+            angle += 0.03*{speed};
+            let cx = w/2, cy = h/2, r = Math.min(w,h)/3;
+            x = cx + r*Math.cos(angle);
+            y = cy + r*Math.sin(angle);
+        }}
+        else if(mode==="square") {{
+            x += dx;
+            if(x >= w-{size}) {{ x = w-{size}; dx = 0; dy = {speed}; }}
+            if(y >= h-{size}) {{ y = h-{size}; dy = 0; dx = -{speed}; }}
+            if(x <= 0 && dx < 0) {{ dx = 0; dy = -{speed}; }}
+            if(y <= 0 && dy < 0) {{ dy = 0; dx = {speed}; }}
+        }}
+
+        ball.style.left = x + "px";
+        ball.style.top = y + "px";
+        requestAnimationFrame(animate);
     }}
-    animate()
+
+    animate();
     </script>
     """
     st.components.v1.html(html, height=650)
