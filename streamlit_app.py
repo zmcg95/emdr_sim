@@ -6,6 +6,7 @@ st.set_page_config(page_title="EMDR Tools", layout="wide")
 if 'page' not in st.session_state:
     st.session_state.page = "home"
 
+# ---- PAGE NAVIGATION FUNCTION ----
 def go_to(page_name):
     st.session_state.page = page_name
 
@@ -55,26 +56,19 @@ if st.session_state.page == "home":
         </style>
 
         <div class="home-title">EMDR TOOLS</div>
-        <div class="card-container">
-            <div class="card" onclick="window.parent.postMessage({{type:'navigate', page:'sync'}}, '*')">EMDR SYNC</div>
-            <div class="card">Coming Soon</div>
-            <div class="card">Coming Soon</div>
-        </div>
         """,
         unsafe_allow_html=True
     )
 
-    # JS listener for navigation
-    st.components.v1.html("""
-    <script>
-    window.addEventListener('message', (event) => {
-        const msg = event.data;
-        if(msg.type==='navigate'){
-            window.parent.location.reload();
-        }
-    });
-    </script>
-    """, height=0)
+    # Navigation buttons (cards)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("EMDR SYNC", key="sync_btn"):
+            go_to("sync")
+    with col2:
+        st.button("Coming Soon", key="coming1", disabled=True)
+    with col3:
+        st.button("Coming Soon", key="coming2", disabled=True)
 
 # ---- EMDR SYNC PAGE ----
 elif st.session_state.page == "sync":
