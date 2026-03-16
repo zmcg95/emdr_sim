@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="EMDR Bilateral Stimulation Tool", layout="wide")
 
-st.title("EMDR Sync")
+st.title("EMDR SYNC")
 
 st.sidebar.header("Settings")
 
