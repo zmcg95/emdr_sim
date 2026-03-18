@@ -44,6 +44,15 @@ duration = st.sidebar.slider(
     value=5
 )
 
+st.sidebar.markdown("---")
+
+# Sidebar controls (UI moved here)
+st.sidebar.markdown("### Session Control")
+
+start_button = st.sidebar.button("Start / Stop")
+
+timer_placeholder = st.sidebar.empty()
+
 pattern_js = {
     "Left ↔ Right": "horizontal",
     "Up ↕ Down": "vertical",
@@ -52,35 +61,20 @@ pattern_js = {
     "Diagonal": "diagonal"
 }[pattern]
 
-# HTML + JS
+# HTML + JS (no controls inside)
 html = f"""
 <style>
 
 .wrapper {{
 display:flex;
-flex-direction:column;
+justify-content:center;
 align-items:center;
 padding-top:20px;
 }}
 
-.controls {{
-margin-bottom:15px;
-}}
-
-button {{
-padding:10px 20px;
-font-size:16px;
-border:none;
-border-radius:10px;
-background:#4CAF50;
-color:white;
-cursor:pointer;
-box-shadow:0 4px 10px rgba(0,0,0,0.2);
-}}
-
 .container {{
 position:relative;
-height:65vh;
+height:70vh;
 width:90%;
 background:{container_color};
 border-radius:25px;
@@ -96,34 +90,18 @@ border-radius:50%;
 background:{ball_color};
 }}
 
-.timer {{
-margin-top:12px;
-font-size:22px;
-font-weight:bold;
-}}
-
 </style>
 
 <div class="wrapper">
-
-<div class="controls">
-<button onclick="toggleAnimation()" id="toggleBtn">Start</button>
-</div>
-
 <div class="container" id="container">
 <div class="ball" id="ball"></div>
 </div>
-
-<div class="timer" id="timerDisplay"></div>
-
 </div>
 
 <script>
 
 const ball = document.getElementById("ball")
 const container = document.getElementById("container")
-const timerDisplay = document.getElementById("timerDisplay")
-const toggleBtn = document.getElementById("toggleBtn")
 
 let x = 100
 let y = 100
@@ -135,53 +113,6 @@ let running = false
 
 let totalSeconds = {duration} * 60
 let remaining = totalSeconds
-let timerInterval = null
-
-// Initialize timer display
-updateTimerDisplay()
-
-function toggleAnimation() {{
-    running = !running
-    toggleBtn.innerText = running ? "Stop" : "Start"
-
-    if (running) {{
-        startTimer()
-        animate()
-    }} else {{
-        stopTimer()
-    }}
-}}
-
-function startTimer() {{
-    if (timerInterval) return
-
-    timerInterval = setInterval(() => {{
-        remaining--
-
-        updateTimerDisplay()
-
-        if (remaining <= 0) {{
-            running = false
-            toggleBtn.innerText = "Start"
-            stopTimer()
-        }}
-    }}, 1000)
-}}
-
-function stopTimer() {{
-    clearInterval(timerInterval)
-    timerInterval = null
-}}
-
-function updateTimerDisplay() {{
-    let min = Math.floor(remaining / 60)
-    let sec = remaining % 60
-
-    timerDisplay.innerText = 
-        "Time left: " + 
-        String(min).padStart(2, '0') + ":" + 
-        String(sec).padStart(2, '0')
-}}
 
 function animate() {{
 
@@ -259,4 +190,34 @@ function animate() {{
 </script>
 """
 
-st.components.v1.html(html, height=700)
+st.components.v1.html(html, height=750)
+
+# -----------------------
+# Python-side timer logic
+# -----------------------
+
+if "running" not in st.session_state:
+    st.session_state.running = False
+    st.session_state.remaining = duration * 60
+
+# Handle button
+if start_button:
+    st.session_state.running = not st.session_state.running
+
+# Timer update loop
+if st.session_state.running:
+    st.session_state.remaining -= 1
+
+    if st.session_state.remaining <= 0:
+        st.session_state.running = False
+        st.session_state.remaining = 0
+
+    st.rerun()
+
+# Display timer in sidebar
+minutes = st.session_state.remaining // 60
+seconds = st.session_state.remaining % 60
+
+timer_placeholder.markdown(
+    f"### ⏱ Time left: {minutes:02d}:{seconds:02d}"
+)
