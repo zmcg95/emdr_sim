@@ -2,11 +2,12 @@ import streamlit as st
 
 st.set_page_config(page_title="EMDR SYNC", layout="wide")
 
+# Title
 st.markdown(
     """
     <style>
     .title-box {
-        background-color: #a3d5ff; /* pastel blue */
+        background-color: #a3d5ff;
         border-radius: 20px;
         padding: 20px;
         text-align: center;
@@ -22,41 +23,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Sidebar
 st.sidebar.header("Settings")
 
-speed = st.sidebar.slider(
-    "Speed",
-    min_value=1,
-    max_value=25,
-    value=10
-)
+speed = st.sidebar.slider("Speed", 1, 25, 10)
+size = st.sidebar.slider("Ball Size", 20, 120, 50)
 
-size = st.sidebar.slider(
-    "Ball Size",
-    min_value=20,
-    max_value=120,
-    value=50
-)
-
-ball_color = st.sidebar.color_picker(
-    "Ball Color",
-    "#ff4b4b"
-)
-
-container_color = st.sidebar.color_picker(
-    "Container Background",
-    "#f0f4f8"
-)
+ball_color = st.sidebar.color_picker("Ball Color", "#ff4b4b")
+container_color = st.sidebar.color_picker("Container Background", "#f0f4f8")
 
 pattern = st.sidebar.selectbox(
     "Movement Pattern",
-    [
-        "Left ↔ Right",
-        "Up ↕ Down",
-        "Circle",
-        "Square",
-        "Diagonal"
-    ]
+    ["Left ↔ Right", "Up ↕ Down", "Circle", "Square", "Diagonal"]
+)
+
+duration = st.sidebar.slider(
+    "Session Duration (minutes)",
+    min_value=1,
+    max_value=60,
+    value=5
 )
 
 pattern_js = {
@@ -67,14 +52,30 @@ pattern_js = {
     "Diagonal": "diagonal"
 }[pattern]
 
+# HTML + JS
 html = f"""
 <style>
 
 .wrapper {{
 display:flex;
-justify-content:center;
+flex-direction:column;
 align-items:center;
 padding-top:20px;
+}}
+
+.controls {{
+margin-bottom:15px;
+}}
+
+button {{
+padding:10px 20px;
+font-size:16px;
+border:none;
+border-radius:10px;
+background:#4CAF50;
+color:white;
+cursor:pointer;
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
 }}
 
 .container {{
@@ -95,18 +96,34 @@ border-radius:50%;
 background:{ball_color};
 }}
 
+.timer {{
+margin-top:12px;
+font-size:22px;
+font-weight:bold;
+}}
+
 </style>
 
 <div class="wrapper">
+
+<div class="controls">
+<button onclick="toggleAnimation()" id="toggleBtn">Start</button>
+</div>
+
 <div class="container" id="container">
 <div class="ball" id="ball"></div>
 </div>
+
+<div class="timer" id="timerDisplay"></div>
+
 </div>
 
 <script>
 
 const ball = document.getElementById("ball")
 const container = document.getElementById("container")
+const timerDisplay = document.getElementById("timerDisplay")
+const toggleBtn = document.getElementById("toggleBtn")
 
 let x = 100
 let y = 100
@@ -114,82 +131,132 @@ let dx = {speed}
 let dy = {speed}
 let angle = 0
 
+let running = false
+
+let totalSeconds = {duration} * 60
+let remaining = totalSeconds
+let timerInterval = null
+
+// Initialize timer display
+updateTimerDisplay()
+
+function toggleAnimation() {{
+    running = !running
+    toggleBtn.innerText = running ? "Stop" : "Start"
+
+    if (running) {{
+        startTimer()
+        animate()
+    }} else {{
+        stopTimer()
+    }}
+}}
+
+function startTimer() {{
+    if (timerInterval) return
+
+    timerInterval = setInterval(() => {{
+        remaining--
+
+        updateTimerDisplay()
+
+        if (remaining <= 0) {{
+            running = false
+            toggleBtn.innerText = "Start"
+            stopTimer()
+        }}
+    }}, 1000)
+}}
+
+function stopTimer() {{
+    clearInterval(timerInterval)
+    timerInterval = null
+}}
+
+function updateTimerDisplay() {{
+    let min = Math.floor(remaining / 60)
+    let sec = remaining % 60
+
+    timerDisplay.innerText = 
+        "Time left: " + 
+        String(min).padStart(2, '0') + ":" + 
+        String(sec).padStart(2, '0')
+}}
+
 function animate() {{
 
-const w = container.clientWidth
-const h = container.clientHeight
-const size = {size}
+    if (!running) return
 
-let mode = "{pattern_js}"
+    const w = container.clientWidth
+    const h = container.clientHeight
+    const size = {size}
 
-if(mode === "horizontal") {{
-    x += dx
-    if(x > w-size || x < 0) dx *= -1
-}}
+    let mode = "{pattern_js}"
 
-else if(mode === "vertical") {{
-    y += dy
-    if(y > h-size || y < 0) dy *= -1
-}}
-
-else if(mode === "diagonal") {{
-    x += dx
-    y += dy
-
-    if(x > w-size || x < 0) dx *= -1
-    if(y > h-size || y < 0) dy *= -1
-}}
-
-else if(mode === "circle") {{
-
-    angle += 0.03 * {speed}
-
-    let cx = w/2
-    let cy = h/2
-    let r = Math.min(w,h)/3
-
-    x = cx + r * Math.cos(angle)
-    y = cy + r * Math.sin(angle)
-
-}}
-
-else if(mode === "square") {{
-
-    x += dx
-
-    if(x >= w-size) {{
-        x = w-size
-        dx = 0
-        dy = {speed}
+    if(mode === "horizontal") {{
+        x += dx
+        if(x > w-size || x < 0) dx *= -1
     }}
 
-    if(y >= h-size) {{
-        y = h-size
-        dy = 0
-        dx = -{speed}
+    else if(mode === "vertical") {{
+        y += dy
+        if(y > h-size || y < 0) dy *= -1
     }}
 
-    if(x <= 0 && dx < 0) {{
-        dx = 0
-        dy = -{speed}
+    else if(mode === "diagonal") {{
+        x += dx
+        y += dy
+
+        if(x > w-size || x < 0) dx *= -1
+        if(y > h-size || y < 0) dy *= -1
     }}
 
-    if(y <= 0 && dy < 0) {{
-        dy = 0
-        dx = {speed}
+    else if(mode === "circle") {{
+
+        angle += 0.03 * {speed}
+
+        let cx = w/2
+        let cy = h/2
+        let r = Math.min(w,h)/3
+
+        x = cx + r * Math.cos(angle)
+        y = cy + r * Math.sin(angle)
     }}
+
+    else if(mode === "square") {{
+
+        x += dx
+
+        if(x >= w-size) {{
+            x = w-size
+            dx = 0
+            dy = {speed}
+        }}
+
+        if(y >= h-size) {{
+            y = h-size
+            dy = 0
+            dx = -{speed}
+        }}
+
+        if(x <= 0 && dx < 0) {{
+            dx = 0
+            dy = -{speed}
+        }}
+
+        if(y <= 0 && dy < 0) {{
+            dy = 0
+            dx = {speed}
+        }}
+    }}
+
+    ball.style.left = x + "px"
+    ball.style.top = y + "px"
+
+    requestAnimationFrame(animate)
 }}
-
-ball.style.left = x + "px"
-ball.style.top = y + "px"
-
-requestAnimationFrame(animate)
-
-}}
-
-animate()
 
 </script>
 """
 
-st.components.v1.html(html, height=650)
+st.components.v1.html(html, height=700)
